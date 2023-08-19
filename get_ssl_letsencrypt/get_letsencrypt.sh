@@ -15,7 +15,7 @@ fi
 # Mengunduh skrip acme-dns-auth.py jika belum ada
 if [[ ! -f /etc/letsencrypt/acme-dns-auth.py ]]; then
     echo -e "\n- Mengunduh file acme-dns-auth.py.."
-    sudo curl -o /etc/letsencrypt/acme-dns-auth.py https://raw.githubusercontent.com/paijoers/get_ssl_letsencrypt/main/get_ssl_letsencrypt/acme-dns-auth.py
+    sudo curl -o /etc/letsencrypt/acme-dns-auth.py https://raw.githubusercontent.com/joohoi/acme-dns-certbot-joohoi/master/acme-dns-auth.py
     sudo chmod 0700 /etc/letsencrypt/acme-dns-auth.py
 fi
 
