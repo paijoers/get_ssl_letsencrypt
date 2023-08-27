@@ -60,6 +60,8 @@
             /tool fetch url="sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem" user="$usr" password="$pw" dst-path="$storage/privkey.pem";
             /certificate import file-name="$storage/fullchain.pem" passphrase="" name="$domain";
             /certificate import file-name="$storage/privkey.pem" passphrase="" name="$domain";
+            # :delay 3s;
+            # /certificate crl remove [find where invalid];
             :if ($hsssl = "y") do={
                 /ip hotspot profile set ssl-certificate=$domain login-by="https,mac-cookie" [find name=$hsprofile];
             } else={
