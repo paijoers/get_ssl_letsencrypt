@@ -1,33 +1,36 @@
-############### CONFIG ###############
+# Buat scheduler baru pada MikroTik interval 1d:00:00:00  dan kemudian copy-paste skrip ini ke dalam scheduler Anda.
+# Edit konfigurasi Anda.
 
-# Domain name
-:local domain "<YOUR_DOMAIN>";
+############### KONFIGURASI ###############
 
-# Ubuntu server IP
-:local ipsv "<YOUR_IP_UBUNTU>";
+# Nama domain
+:local domain "<NAMA_DOMAIN_ANDA>";
 
-# Root user credentials
+# IP server Ubuntu
+:local ipsv "<IP_UBUNTU_ANDA>";
+
+# Kredensial pengguna root
 :local usr "root";
-:local pw "<YOUR_ROOT_PASSWORD>";
+:local pw "<PASSWORD_ROOT_ANDA>";
 
-# MikroTik SSL storage "set ssl-store if you don't have disk"
+# Penyimpanan SSL MikroTik "set hanya ssl-store jika Anda tidak memiliki disk"
 :local storage "disk1/ssl-store";
 
-# SSL Hotspot option "y" or "n"
+# Opsi SSL Hotspot "y" atau "n"
 :local hsssl "y";
 
-# Hotspot server profile
-:local hsprofile "hotspot1";
+# Profil server Hotspot
+:local hsprofile "hotspot2";
 
-# IP services www-ssl option "y" or "n"
+# Opsi IP Services www-ssl "y" atau "n"
 :local wwwssl "y";
 
-# IP services api-ssl option "y" or "n"
+# Opsi IP Services api-ssl "y" atau "n"
 :local apissl "n";
 
-############# END CONFIG #############
+############# AKHIR KONFIGURASI #############
 
-## TIME TO WORKING ##
+
 :local pin;
 :local pout;
 
@@ -40,28 +43,27 @@
 
 :local pinging ([:tonum (100 - (($pin * 100) / $pout))]);
 
-:if ($pinging = "100") do={
-    :log warning "Ubuntu server is unreachable!";
+:if ($pinging = 100) do={
+    :log warning "Server Ubuntu tidak dapat dijangkau!";
 } else={
     :local cert [/certificate find where name=$domain];
     :if ($cert != "") do={
         :local expires [/certificate get $domain value-name=expires-after];
         :local weeks [:pick $expires 0 [:find $expires "w"]];
-        :local days [:pick $expires ([:find $expires "w"]+1) [:find $expires "d"]];
-        :local remain (($weeks*7)+$days);
+        :local days [:pick $expires ([:find $expires "w"] + 1) [:find $expires "d"]];
+        :local remain (($weeks * 7) + $days);
 
-        :if ($remain <  30) do={
-            :log warning "SSL certificate $domain will expire in $remain days";
-            :log warning "Removing old certificate...";
+        :if ($remain < 30) do={
+            :log warning "Sertifikat SSL untuk $domain akan kedaluwarsa dalam $remain hari.";
+            :log warning "Menghapus sertifikat lama...";
             /certificate remove [find where name~"$domain"];
             :delay 3s;
-            :log warning "Downloading new SSL...";
-            /tool fetch url="sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem" user="$usr" password="$pw" dst-path="$storage/fullchain.pem";
-            /tool fetch url="sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem" user="$usr" password="$pw" dst-path="$storage/privkey.pem";
+            :log warning "Mengunduh sertifikat SSL baru...";
+            /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem") user="$usr" password="$pw" dst-path="$storage/fullchain.pem";
+            /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem") user="$usr" password="$pw" dst-path="$storage/privkey.pem";
+            :log warning "Mengimpor sertifikat SSL baru...";
             /certificate import file-name="$storage/fullchain.pem" passphrase="" name="$domain";
             /certificate import file-name="$storage/privkey.pem" passphrase="" name="$domain";
-            # :delay 3s;
-            # /certificate crl remove [find where invalid];
             :if ($hsssl = "y") do={
                 /ip hotspot profile set ssl-certificate=$domain login-by="https,mac-cookie" [find name=$hsprofile];
             } else={
@@ -77,11 +79,18 @@
             } else={
                 /ip service set api-ssl certificate=none;
             }
-            :log warning "SSL certificate $domain has been renewed";
+            :delay 2s;
+            :log warning "Sertifikat SSL untuk $domain telah diperbarui.";
         } else={
-            :log warning "SSL certificate $domain will expire in $remain days";
+            :log warning "Sertifikat SSL untuk $domain akan kedaluwarsa dalam $remain hari.";
         }
     } else={
-        :log warning "Certificate $domain not found! You cannot renew the certificate. You must import it first.";
+        :log warning "Mengunduh sertifikat SSL baru...";
+        /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem") user="$usr" password="$pw" dst-path="$storage/fullchain.pem";
+        /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem") user="$usr" password="$pw" dst-path="$storage/privkey.pem";
+        :log warning "Mengimpor sertifikat SSL baru...";
+        /certificate import file-name="$storage/fullchain.pem" passphrase="" name="$domain";
+        /certificate import file-name="$storage/privkey.pem" passphrase="" name="$domain";
+        :log warning "Sertifikat baru untuk domain $domain telah diimpor.";
     }
 }
