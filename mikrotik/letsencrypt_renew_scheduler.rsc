@@ -64,7 +64,7 @@
                 :log warning "Sertifikat lama berhasil dihapus.";
             } on-error={
                 :set dlstatus "error";
-                :log warning "Sertifikat SSL gagal diunduh..";
+                :log warning "Sertifikat SSL gagal diunduh!";
             }
 
             :if ($dlstatus = "success") do={
