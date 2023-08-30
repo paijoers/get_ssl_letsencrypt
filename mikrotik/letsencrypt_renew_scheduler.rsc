@@ -56,8 +56,8 @@
         :if ($remain < 30) do={
             :do {
                 :log warning "Sertifikat SSL untuk $domain akan kedaluwarsa dalam $remain hari.";
-                /tool fetch url="sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem" user="$usr" password="$pw" dst-path="$storage/$domain.pem";
-                /tool fetch url="sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem" user="$usr" password="$pw" dst-path="$storage/$domain.key.pem";
+                /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.cert.pem");
+                /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.key.pem");
                 :set dlstatus "success";
                 :log warning "Sertifikat SSL berhasil diunduh..";
                 /certificate remove [find where name~"$domain"];
@@ -70,8 +70,8 @@
             :if ($dlstatus = "success") do={
                 :log warning "Mengimpor sertifikat SSL..";
                 :delay 3s;
-                /certificate import file-name="$storage/$domain.pem" passphrase="" name="$domain";
-                /certificate import file-name="$storage/$domain.key.pem" passphrase="" name="$domain";
+                /certificate import file-name=("$storage/$domain.cert.pem") passphrase="" name="$domain";
+                /certificate import file-name=("$storage/$domain.key.pem") passphrase="" name="$domain";
                 :if ($hsssl = "y") do={
                     /ip hotspot profile set ssl-certificate=$domain login-by="https,mac-cookie" [find name=$hsprofile];
                 } else={
@@ -94,8 +94,8 @@
         }
     } else={
         :do {
-            /tool fetch url="sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem" user="$usr" password="$pw" dst-path="$storage/$domain.pem";
-            /tool fetch url="sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem" user="$usr" password="$pw" dst-path="$storage/$domain.key.pem";
+            /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.cert.pem");
+            /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.key.pem");
             :set dlstatus "success";
             :log warning "Sertifikat SSL berhasil diunduh..";
         } on-error={
@@ -104,8 +104,8 @@
         }
         :if ($dlstatus = "success") do={
             :log warning "Mengimpor sertifikat SSL..";
-            /certificate import file-name="$storage/fullchain.pem" passphrase="" name="$domain";
-            /certificate import file-name="$storage/privkey.pem" passphrase="" name="$domain";
+            /certificate import file-name=("$storage/$domain.cert.pem") passphrase="" name="$domain";
+            /certificate import file-name=("$storage/$domain.key.pem") passphrase="" name="$domain";
             :log warning "Sertifikat SSL untuk $domain berhasil diimpor.";
             :if ($hsssl = "y") do={
                     /ip hotspot profile set ssl-certificate=$domain login-by="https,mac-cookie" [find name=$hsprofile];
@@ -122,7 +122,7 @@
                 } else={
                     /ip service set api-ssl certificate=none;
                 }
-                :log warning "Setup selesai.";
+            :log warning "Setup selesai.";
         }
     }
 }
