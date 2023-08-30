@@ -1,5 +1,5 @@
-# Buat scheduler baru pada MikroTik interval 1d:00:00:00  dan kemudian copy-paste skrip ini ke dalam scheduler Anda.
-# Edit konfigurasi Anda.
+# Buat scheduler baru pada MikroTik dengan interval 1d:00:00:00, lalu copy-paste skrip ini ke dalam scheduler Anda.
+# Jangan lupa untuk mengedit konfigurasi sesuai kebutuhan Anda.
 
 ############### KONFIGURASI ###############
 
@@ -13,19 +13,19 @@
 :local usr "root";
 :local pw "<PASSWORD_ROOT_ANDA>";
 
-# Penyimpanan SSL MikroTik "set hanya ssl-store jika Anda tidak memiliki disk"
+# Penyimpanan SSL MikroTik, "set hanya ssl-store jika Anda tidak memiliki disk"
 :local storage "disk1/ssl-store";
 
-# Opsi SSL Hotspot "y" atau "n"
+# Opsi SSL Hotspot, "y" atau "n"
 :local hsssl "y";
 
 # Profil server Hotspot
 :local hsprofile "hotspot2";
 
-# Opsi IP Services www-ssl "y" atau "n"
+# Opsi IP Services www-ssl, "y" atau "n"
 :local wwwssl "y";
 
-# Opsi IP Services api-ssl "y" atau "n"
+# Opsi IP Services api-ssl, "y" atau "n"
 :local apissl "n";
 
 ############# AKHIR KONFIGURASI #############
@@ -56,14 +56,14 @@
         :if ($remain < 30) do={
             :do {
                 :log warning "Sertifikat SSL untuk $domain akan kedaluwarsa dalam $remain hari.";
+                :log warning "Mengunduh sertifikat SSL $domain..";
                 /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.cert.pem");
                 /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.key.pem");
                 :set dlstatus "success";
-                :log warning "Sertifikat SSL berhasil diunduh..";
                 /certificate remove [find where name~"$domain"];
                 :log warning "Sertifikat lama berhasil dihapus.";
             } on-error={
-                :set dlstatus "error"
+                :set dlstatus "error";
                 :log warning "Sertifikat SSL gagal diunduh..";
             }
 
@@ -73,16 +73,19 @@
                 /certificate import file-name=("$storage/$domain.cert.pem") passphrase="" name="$domain";
                 /certificate import file-name=("$storage/$domain.key.pem") passphrase="" name="$domain";
                 :if ($hsssl = "y") do={
+                    :log warning "Pengaturan SSL hotspot..";
                     /ip hotspot profile set ssl-certificate=$domain login-by="https,mac-cookie" [find name=$hsprofile];
                 } else={
                     /ip hotspot profile set ssl-certificate=none login-by="http-chap,mac-cookie" [find name=$hsprofile];
                 }
                 :if ($wwwssl = "y") do={
+                    :log warning "Pengaturan www-ssl..";
                     /ip service set www-ssl certificate=$domain;
                 } else={
                     /ip service set www-ssl certificate=none;
                 }
                 :if ($apissl = "y") do={
+                    :log warning "Pengaturan api-ssl..";
                     /ip service set api-ssl certificate=$domain;
                 } else={
                     /ip service set api-ssl certificate=none;
@@ -93,36 +96,39 @@
             :log warning "Sertifikat SSL untuk $domain akan kedaluwarsa dalam $remain hari.";
         }
     } else={
+        :log warning "Sertifikat $domain tidak ditemukan atau belum terpasang!";
         :do {
+            :log warning "Mengunduh sertifikat SSL $domain..";
             /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.cert.pem");
             /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.key.pem");
             :set dlstatus "success";
-            :log warning "Sertifikat SSL berhasil diunduh..";
         } on-error={
-            :set dlstatus "error"
-            :log warning "Sertifikat SSL gagal diunduh..";
+            :set dlstatus "error";
+            :log warning "Sertifikat SSL gagal diunduh!";
         }
         :if ($dlstatus = "success") do={
             :log warning "Mengimpor sertifikat SSL..";
             /certificate import file-name=("$storage/$domain.cert.pem") passphrase="" name="$domain";
             /certificate import file-name=("$storage/$domain.key.pem") passphrase="" name="$domain";
-            :log warning "Sertifikat SSL untuk $domain berhasil diimpor.";
             :if ($hsssl = "y") do={
-                    /ip hotspot profile set ssl-certificate=$domain login-by="https,mac-cookie" [find name=$hsprofile];
-                } else={
-                    /ip hotspot profile set ssl-certificate=none login-by="http-chap,mac-cookie" [find name=$hsprofile];
-                }
-                :if ($wwwssl = "y") do={
-                    /ip service set www-ssl certificate=$domain;
-                } else={
-                    /ip service set www-ssl certificate=none;
-                }
-                :if ($apissl = "y") do={
-                    /ip service set api-ssl certificate=$domain;
-                } else={
-                    /ip service set api-ssl certificate=none;
-                }
-            :log warning "Setup selesai.";
+                :log warning "Pengaturan SSL hotspot..";
+                /ip hotspot profile set ssl-certificate=$domain login-by="https,mac-cookie" [find name=$hsprofile];
+            } else={
+                /ip hotspot profile set ssl-certificate=none login-by="http-chap,mac-cookie" [find name=$hsprofile];
+            }
+            :if ($wwwssl = "y") do={
+                :log warning "Pengaturan www-ssl..";
+                /ip service set www-ssl certificate=$domain;
+            } else={
+                /ip service set www-ssl certificate=none;
+            }
+            :if ($apissl = "y") do={
+                :log warning "Pengaturan api-ssl..";
+                /ip service set api-ssl certificate=$domain;
+            } else={
+                /ip service set api-ssl certificate=none;
+            }
+            :log warning "Pengaturan selesai.";
         }
     }
 }
