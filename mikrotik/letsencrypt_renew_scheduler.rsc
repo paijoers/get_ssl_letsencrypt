@@ -30,6 +30,8 @@
 
 ############# AKHIR KONFIGURASI #############
 
+
+:local renewdays "30";
 :local pin;
 :local pout;
 :local dlstatus;
@@ -53,9 +55,9 @@
         :local days [:pick $expires ([:find $expires "w"] + 1) [:find $expires "d"]];
         :local remain (($weeks * 7) + $days);
 
-        :if ($remain < 30) do={
+        :if ($remain < $renewdays) do={
             :do {
-                :log warning "Sertifikat SSL untuk $domain akan kedaluwarsa dalam $remain hari.";
+                :log warning "Sertifikat SSL $domain akan kedaluwarsa dalam $remain hari.";
                 :log warning "Mengunduh sertifikat SSL $domain..";
                 /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/fullchain.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.cert.pem");
                 /tool fetch url=("sftp://$ipsv/etc/letsencrypt/live/$domain/privkey.pem") user="$usr" password="$pw" dst-path=("$storage/$domain.key.pem");
@@ -68,7 +70,7 @@
             }
 
             :if ($dlstatus = "success") do={
-                :log warning "Mengimpor sertifikat SSL..";
+                :log warning "Mengimpor sertifikat SSL $domain..";
                 :delay 3s;
                 /certificate import file-name=("$storage/$domain.cert.pem") passphrase="" name="$domain";
                 /certificate import file-name=("$storage/$domain.key.pem") passphrase="" name="$domain";
@@ -90,10 +92,10 @@
                 } else={
                     /ip service set api-ssl certificate=none;
                 }
-                :log warning "Sertifikat SSL untuk $domain telah diperbarui.";
+                :log warning "Sertifikat SSL $domain telah diperbarui.";
             }
         } else={
-            :log warning "Sertifikat SSL untuk $domain akan kedaluwarsa dalam $remain hari.";
+            :log warning "Sertifikat SSL $domain akan kedaluwarsa dalam $remain hari.";
         }
     } else={
         :log warning "Sertifikat $domain tidak ditemukan atau belum terpasang!";
@@ -107,7 +109,7 @@
             :log warning "Sertifikat SSL gagal diunduh!";
         }
         :if ($dlstatus = "success") do={
-            :log warning "Mengimpor sertifikat SSL..";
+            :log warning "Mengimpor sertifikat SSL $domain..";
             /certificate import file-name=("$storage/$domain.cert.pem") passphrase="" name="$domain";
             /certificate import file-name=("$storage/$domain.key.pem") passphrase="" name="$domain";
             :if ($hsssl = "y") do={
@@ -128,7 +130,7 @@
             } else={
                 /ip service set api-ssl certificate=none;
             }
-            :log warning "Pengaturan selesai.";
+            :log warning "Sertifikat SSL untuk domain $domain berhasil dipasang.";
         }
     }
 }
