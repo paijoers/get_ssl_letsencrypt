@@ -51,10 +51,7 @@
     :local cert [/certificate find where name=$domain];
     :if ($cert != "") do={
         :local expires [/certificate get $domain value-name=expires-after];
-        :local weeks [:pick $expires 0 [:find $expires "w"]];
-        :local days [:pick $expires ([:find $expires "w"] + 1) [:find $expires "d"]];
-        :local remain (($weeks * 7) + $days);
-
+        :local remain (([:pick $expires 0 [:find $expires "w"]] * 7) + ([:pick $expires ([:find $expires "w"] + 1) [:find $expires "d"]]));
         :if ($remain < $renewdays) do={
             :do {
                 :log warning "Sertifikat SSL $domain akan kedaluwarsa dalam $remain hari.";
